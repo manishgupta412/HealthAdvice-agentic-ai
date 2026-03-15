@@ -11,7 +11,7 @@ import json, os
 load_dotenv(dotenv_path='apikey.env')
 
 # read the medical report
-with open("Medical Reports\Medical Rerort - Michael Johnson - Panic Attack Disorder.txt", "r") as file:
+with open("Medical Reports\Medical Report - Robert Miller - COPD.txt", "r") as file:
     medical_report = file.read()
 
 
@@ -30,6 +30,10 @@ def get_response(agent_name, agent):
 responses = {}
 with ThreadPoolExecutor() as executor:
     futures = {executor.submit(get_response, name, agent): name for name, agent in agents.items()}
+
+    print("\nAgent Responses:")
+for name, resp in responses.items():
+    print(name, ":", resp)
     
     for future in as_completed(futures):
         agent_name, response = future.result()
@@ -43,14 +47,28 @@ team_agent = MultidisciplinaryTeam(
 
 # Run the MultidisciplinaryTeam agent to generate the final diagnosis
 final_diagnosis = team_agent.run()
-final_diagnosis_text = "### Final Diagnosis:\n\n" + final_diagnosis
+
+# Convert output safely
+if isinstance(final_diagnosis, list):
+    formatted = []
+    for item in final_diagnosis:
+        if isinstance(item, dict):
+            formatted.append(str(item))
+        else:
+            formatted.append(item)
+    final_diagnosis_text = "### Final Diagnosis:\n\n" + "\n".join(formatted)
+else:
+    final_diagnosis_text = "### Final Diagnosis:\n\n" + str(final_diagnosis)
+
+
+# Define output path
 txt_output_path = "results/final_diagnosis.txt"
 
-# Ensure the directory exists
+# Ensure folder exists
 os.makedirs(os.path.dirname(txt_output_path), exist_ok=True)
 
-# Write the final diagnosis to the text file
-with open(txt_output_path, "w") as txt_file:
+# Write result
+with open(txt_output_path, "w", encoding="utf-8") as txt_file:
     txt_file.write(final_diagnosis_text)
 
 print(f"Final diagnosis has been saved to {txt_output_path}")
